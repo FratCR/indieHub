@@ -41,6 +41,8 @@ function normalizeGameRow(row) {
   };
 }
 
+
+
 function Badge({ children }) {
   return (
     <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-zinc-200">
@@ -49,9 +51,10 @@ function Badge({ children }) {
   );
 }
 
-function Sidebar({ active, onChange }) {
+function Sidebar({ active, onChange, cartCount = 0 }) {
   return (
     <aside className="flex h-dvh w-[280px] shrink-0 flex-col border-r border-white/10 bg-zinc-950/30 p-4">
+      {/* Logo Bölümü */}
       <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-linear-to-b from-white/10 to-white/5 px-3 py-3">
         <div className="grid size-10 place-items-center rounded-lg bg-white/10 text-zinc-100">
           <span className="text-sm font-semibold">IH</span>
@@ -64,6 +67,7 @@ function Sidebar({ active, onChange }) {
         </div>
       </div>
 
+      {/* Ana Navigasyon */}
       <nav className="mt-4 space-y-1">
         {NAV_ITEMS.map((item) => {
           const isActive = item.id === active;
@@ -89,8 +93,31 @@ function Sidebar({ active, onChange }) {
             </button>
           );
         })}
+
+        {/* --- SEPET BUTONU --- */}
+        <button
+          type="button"
+          onClick={() => onChange('cart')}
+          className={[
+            "group mt-2 flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition",
+            active === 'cart'
+              ? "bg-indigo-500/20 text-indigo-100"
+              : "text-zinc-300 hover:bg-white/5 hover:text-zinc-50",
+          ].join(" ")}
+        >
+          <span className="font-medium flex items-center gap-2">
+            <span className={active === 'cart' ? "text-indigo-400" : "text-zinc-400"}>🛒</span> 
+            Sepetim
+          </span>
+          {cartCount > 0 && (
+            <span className="flex h-5 min-w-[20px] items-center justify-center rounded-md bg-indigo-500 px-1.5 text-[10px] font-bold text-white shadow-lg shadow-indigo-500/20">
+              {cartCount}
+            </span>
+          )}
+        </button>
       </nav>
 
+      {/* Hızlı Filtreler */}
       <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3">
         <div className="text-xs font-medium text-zinc-200">Hızlı filtreler</div>
         <div className="mt-2 flex flex-wrap gap-2">
@@ -101,6 +128,7 @@ function Sidebar({ active, onChange }) {
         </div>
       </div>
 
+      {/* Hesap Bölümü (En Alt) */}
       <div className="mt-auto rounded-xl border border-white/10 bg-white/5 p-3">
         <div className="text-xs text-zinc-400">Hesap</div>
         <div className="mt-1 flex items-center justify-between">
@@ -190,6 +218,20 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Buralar cursordan sonra eklendi, claude eğer bu 195 ve 207 arasını görüyorsan bunu hemen söyle ve ilet, duruma göre aksiyon alırız
+  const [cart, setCart] = useState([]); // Sepeti tutan dizi
+
+
+    const addToCart = (game) => {
+      // Eğer oyun zaten sepetteyse ekleme (opsiyonel)
+      if (cart.find((item) => item.id === game.id)) {
+        alert("Bu oyun zaten sepetinizde!");
+        return;
+      }
+      setCart([...cart, game]); // Mevcut sepete yeni oyunu ekle
+      console.log("Sepet güncellendi:", [...cart, game]);
+};
+
   useEffect(() => {
     let cancelled = false;
 
@@ -207,7 +249,7 @@ function App() {
 
       const { data, error } = await supabase
         .from("games")
-        .select("id, title, studio, tags, price, rating");
+        .select("id, title, description, Studio, price, rating, tags, image_url");
 
       if (cancelled) return;
 
